@@ -1,6 +1,7 @@
 import os, json, random
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify, make_response
 from flask_login import current_user, login_required
+from datetime import datetime, timedelta
 from app.models import db, GuessLog, ScoreLog
 from sqlalchemy import func
 from urllib.parse import unquote
@@ -24,6 +25,17 @@ def normalise_usc(p, confs):
         p["school"]     = "USC"
         p["conference"] = confs.get("USC", "P12")
 
+def performance_text(score, max_points):
+    if score >= max_points:
+        return "\U0001F410 Perfect game!"  # 🐐
+    elif score >= 4:
+        return "\U0001F525 You crushed it today!"
+    elif score >= 3:
+        return "\U0001F9E0 Solid effort, keep going!"
+    elif score >= 2:
+        return "\U0001F913 Not bad, study those rosters!"
+    else:
+        return "\U0001F9CA Cold start – better luck tomorrow!"
 
 @bp.route("/")
 def home():
@@ -45,7 +57,7 @@ def show_quiz():
         for pl in data["players"]:
             normalise_usc(pl, conf_map)
 
-        results, correct_answers = [], []
+        results, correct_answers, share_statuses = [], [], []
         score, max_points = 0.0, 0.0
 
         for idx, p in enumerate(data["players"]):
@@ -66,6 +78,7 @@ def show_quiz():
                     is_correct = True
                 score += pts
                 results.append("✅" if is_correct else "❌")
+                share_statuses.append("🟨 -- Used Hint" if (is_correct and used_hint) else ("✅ -- Correct" if is_correct else "❌ -- Missed"))
                 correct_answers.append(f"I played for {team_name}")
 
             else:
@@ -78,6 +91,7 @@ def show_quiz():
                     is_correct = True
                 score += pts
                 results.append("✅" if is_correct else "❌")
+                share_statuses.append("🟨 -- Used Hint" if (is_correct and used_hint) else ("✅ -- Correct" if is_correct else "❌ -- Missed"))
                 correct_answers.append(f"I am from {country} and played for {team_name}")
 
              # Log the guess only for authenticated users
@@ -101,6 +115,26 @@ def show_quiz():
         )
         db.session.add(score_entry)
         db.session.commit()
+        
+        streak = 0
+        if current_user.is_authenticated:
+            logs = (
+                ScoreLog.query.filter_by(user_id=current_user.id)
+                .order_by(ScoreLog.timestamp.desc())
+                .all()
+            )
+            if logs:
+                streak = 1
+                prev = logs[0].timestamp.date()
+                for log in logs[1:]:
+                    d = log.timestamp.date()
+                    if d == prev:
+                        continue
+                    if (prev - d).days == 1:
+                        streak += 1
+                        prev = d
+                    else:
+                        break
 
         scores = [s.score for s in ScoreLog.query.filter_by(quiz_id=quiz_key).all()]
         percentile = 0
@@ -109,6 +143,19 @@ def show_quiz():
             rank = sum(s <= score for s in scores)
             percentile = round(100 * rank / len(scores))
         
+        perf_text = performance_text(score, max_points)
+
+        date_str = datetime.utcnow().strftime("%B %-d, %Y")
+        share_lines = [
+            f"\U0001F3C0 Starting5 Puzzle – {date_str}",
+            f"\U0001F4C8 Score: {round(score,2)}/{round(max_points,2)}",
+            "",
+        ]
+        for pl, status in zip(data["players"], share_statuses):
+            share_lines.append(f"\uD83D\uDD39 {pl['position']}: {status}")
+        share_lines += ["", perf_text, "Play now: www.starting5.us"]
+        share_message = "\n".join(share_lines)
+
         return render_template(
             "quiz.html",
             data            = data,
@@ -120,7 +167,10 @@ def show_quiz():
             max_points      = round(max_points, 2),
             quiz_json_path  = qp,
             quiz_id        = os.path.basename(qp),
-             percentile     = percentile
+            percentile     = percentile,
+            streak          = streak,
+            share_message   = share_message,
+            performance_text= perf_text
         )
 
     # ─────────────────────────────────────────────────────────────────────────────
@@ -143,6 +193,26 @@ def show_quiz():
     for pl in data["players"]:
         normalise_usc(pl, conf_map)
 
+    streak = 0
+    if current_user.is_authenticated:
+        logs = (
+            ScoreLog.query.filter_by(user_id=current_user.id)
+            .order_by(ScoreLog.timestamp.desc())
+            .all()
+        )
+        if logs:
+            streak = 1
+            prev = logs[0].timestamp.date()
+            for log in logs[1:]:
+                d = log.timestamp.date()
+                if d == prev:
+                    continue
+                if (prev - d).days == 1:
+                    streak += 1
+                    prev = d
+                else:
+                    break
+
     return render_template(
         "quiz.html",
         data            = data,
@@ -153,7 +223,11 @@ def show_quiz():
         score           = None,
         max_points      = None,
         quiz_json_path  = quiz_path,
-        quiz_id        = os.path.basename(quiz_path)
+        quiz_id        = os.path.basename(quiz_path),
+        streak         = streak,
+        share_message  = None,
+        performance_text = None
+
     )
 
 
