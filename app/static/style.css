@@ -12,10 +12,12 @@
 :root {
   --navy-900: #0f172a;
   --navy-800: #1e293b;
+  --navy-700: #334155;
   --gold:      #facc15;
   --light-gray: #e2e8f0;
   --grayish:   #94a3b8;
   --green:     #22c55e;
+  --orange:    #f59e0b;
   --red:       #ef4444;
   --blue:      #60a5fa;
   --modal-bg:  #1e293b;
@@ -258,6 +260,16 @@ body {
   white-space: nowrap;
 }
 
+.correct{display:block;margin-top:1rem;font-size:.75rem;color: var(--green);}
+.wrong{display:block;margin-top:1rem;font-size:.75rem;color: var(--red);}
+.answer{
+  display:block;
+  margin-top:1rem;
+  font-size:0.42rem;
+  color: var(--white);
+  min-height:1.5rem;
+}
+
 /* ────────────────────────────────────────────────────────────────────────── */
 /* 14) Result Modal */
 .modal {
@@ -371,4 +383,125 @@ body {
   height: 100%;
   width: 0%;
   transition: width 2s ease-in-out;
+}
+
+/* ────────────────────────────────────────────────────────────────────────── */
+/* 19) Score Sidebar */
+.quiz-wrapper.with-score {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.score-area {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translateX(calc(-100% - 1rem));
+  width: 12rem;
+  background: var(--navy-800);
+  border: 2px solid var(--gold);
+  border-radius: 0.75rem;
+  padding: 0.88rem;
+  color: var(--gold);
+  font-size: 0.6rem;
+}
+
+.score-area .score-line {
+  font-size: 0.75rem;
+  margin-bottom: 0.6rem;
+}
+
+.percentile-row {
+  margin-top: 0.6rem;
+}
+.percentile-row .bar {
+  background: #1e293b;
+  height: 8px;
+  width: 100%;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-top: 0.4rem;
+}
+.percentile-row .bar-fill {
+  background: linear-gradient(to right, #facc15, #f59e0b);
+  height: 100%;
+  width: 0%;
+  transition: width 2s ease-in-out;
+}
+
+/* ────────────────────────────────────────────────────────────────────────── */
+/* 18) Instructions Modal Content */
+.scoreboard {
+  display: grid;
+  gap: 2.3rem;
+  font-size: 0.7rem;
+  color: #e2e8f0;
+}
+.board-section {
+  border-left: 4px solid var(--gold);
+  padding-left: 1.2rem;
+}
+.board-section .label {
+  font-size: 0.82rem;
+  color: var(--gold);
+  margin-bottom: 0.55rem;
+}
+.rules-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  line-height: 1.55;
+}
+.rules-list li {
+  margin-bottom: 0.3rem;
+}
+.examples {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.6rem;
+  margin-top: 0.8rem;
+}
+@media (min-width: 600px) {
+  .examples {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.example {
+  display: flex;
+  gap: 0.85rem;
+  align-items: flex-start;
+}
+.example img {
+  width: 84px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 3px solid var(--navy-700);
+  flex-shrink: 0;
+}
+.ex-text {
+  line-height: 1.46;
+}
+.player {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: var(--gold);
+}
+.points {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.points li {
+  margin-bottom: 0.25rem;
+}
+.green {
+  color: var(--green);
+}
+.orange {
+  color: var(--orange);
+}
+.red {
+  color: var(--red);
 }

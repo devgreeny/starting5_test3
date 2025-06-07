@@ -42,7 +42,11 @@ def create_app(config_class: type = Config) -> Flask:
 
     # ── Import models & set user_loader ─────────────────────────
     # Do this *after* db.init_app(app) so table metadata binds correctly.
-    from .models import User  # noqa: F401
+    from .models import User, GuessLog, ScoreLog  # noqa: F401
+
+    # Ensure tables exist for SQLite/local development
+    with app.app_context():
+        db.create_all()
 
     @login.user_loader
     def load_user(user_id: str):

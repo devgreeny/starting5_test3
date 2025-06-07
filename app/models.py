@@ -32,3 +32,15 @@ class GuessLog(db.Model):
     timestamp   = db.Column(db.DateTime, default=datetime.utcnow)
 
     user = db.relationship("User", backref="guesses")
+
+class ScoreLog(db.Model):
+    __tablename__ = "score_log"
+
+    id = db.Column(db.Integer, primary_key=True)
+    quiz_id = db.Column(db.String(120), index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    score = db.Column(db.Float)
+    max_points = db.Column(db.Float)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', backref='scores')

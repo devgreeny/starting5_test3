@@ -1,7 +1,7 @@
 import os, json, random
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify, make_response
 from flask_login import current_user, login_required
-from app.models import db, GuessLog
+from app.models import db, GuessLog, ScoreLog
 from sqlalchemy import func
 from urllib.parse import unquote
 
@@ -27,11 +27,10 @@ def normalise_usc(p, confs):
 
 @bp.route("/")
 def home():
-    return render_template("welcome.html")
+    return redirect(url_for("main.show_quiz"))
 
 
 @bp.route("/quiz", methods=["GET", "POST"])
-@login_required
 def show_quiz():
     conf_map, colleges = load_confs()
 
@@ -67,36 +66,49 @@ def show_quiz():
                     is_correct = True
                 score += pts
                 results.append("✅" if is_correct else "❌")
-                correct_answers.append(team_name)
+                correct_answers.append(f"I played for {team_name}")
 
             else:
-                max_points += 1.25
+                max_points += 1.0
                 if guess.lower() == team_name.lower():
-                    pts = 1.25
-                    is_correct = True
-                elif guess.lower() == country.lower():
                     pts = 1.0
                     is_correct = True
-                elif guess.lower() == "other":
+                elif guess.lower() == country.lower():
                     pts = 0.75
                     is_correct = True
                 score += pts
                 results.append("✅" if is_correct else "❌")
-                correct_answers.append(team_name)
+                correct_answers.append(f"I am from {country} and played for {team_name}")
 
-            # Log the guess in the database
-            guess_log = GuessLog(
-                user_id=current_user.id,
-                player_name=name,
-                school=team_name,
-                guess=guess,
-                is_correct=is_correct,
-                used_hint=used_hint
-            )
-            db.session.add(guess_log)
+             # Log the guess only for authenticated users
+            if current_user.is_authenticated:
+                guess_log = GuessLog(
+                    user_id=current_user.id,
+                    player_name=name,
+                    school=team_name,
+                    guess=guess,
+                    is_correct=is_correct,
+                    used_hint=used_hint
+                )
+                db.session.add(guess_log)
 
+        quiz_key = os.path.basename(qp)
+        score_entry = ScoreLog(
+            quiz_id=quiz_key,
+            user_id=current_user.id if current_user.is_authenticated else None,
+            score=score,
+            max_points=max_points,
+        )
+        db.session.add(score_entry)
         db.session.commit()
 
+        scores = [s.score for s in ScoreLog.query.filter_by(quiz_id=quiz_key).all()]
+        percentile = 0
+        if scores:
+            scores.sort()
+            rank = sum(s <= score for s in scores)
+            percentile = round(100 * rank / len(scores))
+        
         return render_template(
             "quiz.html",
             data            = data,
@@ -106,7 +118,9 @@ def show_quiz():
             correct_answers = correct_answers,
             score           = round(score, 2),
             max_points      = round(max_points, 2),
-            quiz_json_path  = qp
+            quiz_json_path  = qp,
+            quiz_id        = os.path.basename(qp),
+             percentile     = percentile
         )
 
     # ─────────────────────────────────────────────────────────────────────────────
@@ -138,7 +152,8 @@ def show_quiz():
         correct_answers = [],
         score           = None,
         max_points      = None,
-        quiz_json_path  = quiz_path
+        quiz_json_path  = quiz_path,
+        quiz_id        = os.path.basename(quiz_path)
     )
 
 

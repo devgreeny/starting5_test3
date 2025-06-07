@@ -110,6 +110,19 @@
       <div class="header-game_id"><span>Game ID: {{ data.game_id }}</span></div>
     </div>
 
+    <div class="quiz-wrapper{% if results %} with-score{% endif %}">
+      {% if results %}
+        <div class="score-area">
+          <p class="score-line">You scored {{ score }} out of {{ max_points }}</p>
+          <div class="percentile-row">
+            <span class="percent-text">You scored in the {{ percentile }}th percentile of players</span>
+            <div class="bar">
+              <div class="bar-fill percentile-fill" style="width: 0%;"></div>
+            </div>
+          </div>
+        </div>
+      {% endif %}
+
     <form method="POST" action="{{ url_for('main.show_quiz') }}">
       <input type="hidden" name="quiz_json_path" value="{{ quiz_json_path }}" />
 
@@ -188,29 +201,30 @@
               </div>
             </div>
 
-            <!-- dropdown -->
-            <select
-              name="{{ player.name }}"
-              class="guess-select"
-              data-conference="{{ player.conference }}"
-              required
-            >
-              <option disabled selected></option>
-              {% for college in colleges|sort %}
-                <option
-                  value="{{ college }}"
-                  data-conf="{{ college_confs[college]|default('Other') }}"
-                >
-                  {{ college }}
-                </option>
-              {% endfor %}
-              <option value="Other" data-conf="Other">Other</option>
-            </select>
+            {% if not results %}
+              <!-- dropdown -->
+              <select
+                name="{{ player.name }}"
+                class="guess-select"
+                data-conference="{{ player.conference }}"
+                required
+              >
+                <option disabled selected></option>
+                {% for college in colleges|sort %}
+                  <option
+                    value="{{ college }}"
+                    data-conf="{{ college_confs[college]|default('Other') }}"
+                  >
+                    {{ college }}
+                  </option>
+                {% endfor %}
+                <option value="Other" data-conf="Other">Other</option>
+              </select>
 
-            <div class="button-row">
-              <button type="button" class="hint-btn">Hint</button>
-              <button type="button" class="random-btn">Random</button>
-            </div>
+              <div class="button-row">
+                <button type="button" class="hint-btn">Hint</button>
+                <button type="button" class="random-btn">Random</button>
+              </div>
 
             <!-- hint text -->
             <p class="hint-text" style="display:none;">
@@ -220,6 +234,7 @@
                 I didn't attend college
               {% endif %}
             </p>
+          {% endif %}
 
             {% if results %}
               <p class="result">
@@ -228,6 +243,7 @@
                 {% else %}
                   <span class="wrong">Incorrect</span>
                 {% endif %}
+                  <span class="answer">{{ correct_answers[idx] }}</span>
                 
                 <!-- Accuracy bar -->
                 <div class="accuracy-bar-row" data-player-name="{{ player.name }}">
@@ -314,36 +330,38 @@
               </div>
             </div>
 
-            <select
-              name="{{ player.name }}"
-              class="guess-select"
-              data-conference="{{ player.conference }}"
-              required
-            >
-              <option disabled selected></option>
-              {% for college in colleges|sort %}
-                <option
-                  value="{{ college }}"
-                  data-conf="{{ college_confs[college]|default('Other') }}"
-                >
-                  {{ college }}
-                </option>
-              {% endfor %}
-              <option value="Other" data-conf="Other">Other</option>
-            </select>
+            {% if not results %}
+              <select
+                name="{{ player.name }}"
+                class="guess-select"
+                data-conference="{{ player.conference }}"
+                required
+              >
+                <option disabled selected></option>
+                {% for college in colleges|sort %}
+                  <option
+                    value="{{ college }}"
+                    data-conf="{{ college_confs[college]|default('Other') }}"
+                  >
+                    {{ college }}
+                  </option>
+                {% endfor %}
+                <option value="Other" data-conf="Other">Other</option>
+              </select>
 
-            <div class="button-row">
-              <button type="button" class="hint-btn">Hint</button>
-              <button type="button" class="random-btn">Random</button>
-            </div>
+              <div class="button-row">
+                <button type="button" class="hint-btn">Hint</button>
+                <button type="button" class="random-btn">Random</button>
+              </div>
 
-            <p class="hint-text" style="display:none;">
-              {% if player.school_type == 'College' %}
-                I played in the {{ player.conference }}
-              {% else %}
-                I didn't attend college
-              {% endif %}
-            </p>
+              <p class="hint-text" style="display:none;">
+                {% if player.school_type == 'College' %}
+                  I played in the {{ player.conference }}
+                {% else %}
+                  I didn't attend college
+                {% endif %}
+              </p>
+            {% endif %}
 
             {% if results %}
               <p class="result">
@@ -352,6 +370,7 @@
                 {% else %}
                   <span class="wrong">Incorrect</span>
                 {% endif %}
+                  <span class="answer">{{ correct_answers[idx] }}</span>
                 
                 <!-- Accuracy bar -->
                 <div class="accuracy-bar-row" data-player-name="{{ player.name }}">
@@ -372,20 +391,97 @@
         <button class="submit-btn" disabled>Already Scored</button>
       {% endif %}
     </form>
+  </div>
 
     <!-- ── Score Modal ─────────────────────────────────────────────────────── -->
-    {% if results %}
-      <div id="result-modal" class="modal">
+    {% if not results %}
+      <div id="instructions-modal" class="modal">
         <div class="modal-content">
-          <p>You earned {{ score }} / {{ max_points }} points!</p>
-          {% for i in range(data.players|length) %}
-            {% if not results[i].startswith('✅') %}
-              <p class="missed">{{ data.players[i].name }} – {{ correct_answers[i] }}</p>
-            {% endif %}
-          {% endfor %}
-          <a href="{{ url_for('main.show_quiz') }}" class="play-again-modal">Play Again</a>
+          <section class="scoreboard">
+            <div class="board-section">
+              <div class="label">College players</div>
+              <ul class="rules-list">
+                <li>Exact school — <span class="green">1&nbsp;pt</span></li>
+                <li>Used hint — <span class="orange">0.75&nbsp;pt</span> (max)</li>
+              </ul>
+            </div>
+
+            <div class="board-section">
+              <div class="label">Non-college players</div>
+              <ul class="rules-list">
+                <li>Exact club — <span class="green">1.25&nbsp;pt</span></li>
+                <li>Correct country — 1&nbsp;pt</li>
+                <li>Guess “Other” — <span class="orange">0.75&nbsp;pt</span></li>
+              </ul>
+            </div>
+
+            <div class="board-section">
+              <div class="label">Hints</div>
+              <ul class="rules-list">
+                <li>Shows conference <em>or</em> “didn’t attend college.”</li>
+                <li>No penalty on non-college hints.</li>
+                <li>College drops to 0.75&nbsp;pt max.</li>
+              </ul>
+            </div>
+
+            <div class="board-section">
+              <div class="label">Random</div>
+              Fills a random guess for you.
+            </div>
+
+            <div class="board-section">
+              <div class="label">Scoring examples</div>
+              <div class="examples">
+                <div class="example">
+                  <img src="https://cdn.nba.com/headshots/nba/latest/260x190/203114.png" alt="Khris Middleton">
+                  <div class="ex-text">
+                    <span class="player">Khris&nbsp;Middleton</span>
+                    <ul class="points">
+                      <li><span class="green">Texas&nbsp;A&amp;M — 1&nbsp;pt</span></li>
+                      <li><span class="orange">Texas&nbsp;A&amp;M (using hint) — 0.75&nbsp;pt</span></li>
+                      <li><span class="red">Wrong school — 0&nbsp;pt</span></li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div class="example">
+                  <img src="https://cdn.nba.com/headshots/nba/latest/260x190/203507.png" alt="Giannis Antetokounmpo">
+                  <div class="ex-text">
+                    <span class="player">Giannis&nbsp;Antetokounmpo</span>
+                    <ul class="points">
+                      <li><span class="orange">“Other” — 0.75&nbsp;pt</span></li>
+                      <li>Greece — 1&nbsp;pt</li>
+                      <li><span class="green">Panathinaikos — 1.25&nbsp;pt</span></li>
+                      <li><span class="red">Wrong guess — 0&nbsp;pt</span></li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="board-section">
+              <div class="label">Total score</div>
+              Your points ÷ puzzle’s full value (max pts never shrink).
+            </div>
+          </section>
+
+          <button id="close-instructions" class="play-again-modal">Start Quiz</button>
         </div>
       </div>
+      <div id="limit-modal" class="modal">
+        <div class="modal-content">
+          <p>You've already played today's quiz. Come back tomorrow!</p>
+        </div>
+      </div>
+      {% if results and not current_user.is_authenticated %}
+      <div id="signup-modal" class="modal">
+        <div class="modal-content">
+          <p>Register to keep track of your scores and see your friends' ball knowledge.</p>
+          <a href="{{ url_for('auth.register') }}" class="play-again-modal">Register</a>
+          <button id="signup-close" class="play-again-modal" style="background:#475569;margin-left:1rem">Close</button>
+        </div>
+      </div>
+      {% endif %}
     {% endif %}
   </div>
   <!-- /content -->
@@ -393,6 +489,39 @@
   <!-- ── JavaScript (Select2, Random, Hint‐modal Logic) ───────────────────── -->
   <script>
     $(function () {
+      const quizId = {{ quiz_id|tojson }};
+  const userId = {% if current_user.is_authenticated %}{{ current_user.id }}{% else %}null{% endif %};
+  const key = userId ? `lastPlayedQuiz_${userId}` : 'lastPlayedQuiz_guest';
+  const lastPlayed = localStorage.getItem(key);
+  const hasResults = {{ 'true' if results else 'false' }};
+
+  if (hasResults) {
+    localStorage.setItem(key, quizId);
+    const pct = {{ percentile|default(0) }};
+    $('.percent-text').text(`You scored in the ${pct}th percentile of players`);
+    requestAnimationFrame(() => {
+      $('.percentile-fill').css('width', pct + '%');
+    });
+  } else if (lastPlayed === quizId) {
+    $('#limit-modal').fadeIn();
+    $('.submit-btn').prop('disabled', true);
+  }
+
+  if (hasResults && !userId) {
+    $('#signup-modal').fadeIn();
+  }
+
+  const seen = localStorage.getItem('seenInstructions');
+  if (!seen) {
+    $('#instructions-modal').fadeIn();
+  }
+  $('#close-instructions').on('click', function () {
+    $('#instructions-modal').fadeOut();
+    localStorage.setItem('seenInstructions', '1');
+  });
+  $('#signup-close').on('click', function () {
+    $('#signup-modal').fadeOut();
+  });
   /* ----- Select2 init ---------------------------------------------------- */
   $('.guess-select').each(function () {
     const $sel = $(this);
@@ -483,8 +612,6 @@
     $card.find('.hint-text').fadeIn();
   }
 
-  /* ----- show score modal if present ------------------------------------ */
-  {% if results %} $('#result-modal').fadeIn(); {% endif %}
 
   // ----- Accuracy fetcher for each player result -----
   $("[data-player-name]").each(function () {
