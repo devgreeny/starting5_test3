@@ -134,6 +134,13 @@
           </div>
         </div>
       {% endif %}
+      
+      {% if results and not current_user.is_authenticated %}
+        <div id="signup-box" class="signup-box" style="display:none">
+          <p>Sign up to track your scores and compare your ball knowledge to your friends.</p>
+          <a id="signup-btn" href="{{ url_for('auth.register') }}" class="play-again-modal">Sign Up</a>
+        </div>
+      {% endif %}
 
     <form method="POST" action="{{ url_for('main.show_quiz') }}">
       <input type="hidden" name="quiz_json_path" value="{{ quiz_json_path }}" />
@@ -188,7 +195,7 @@
               <div class="bar">
                 <div
                   class="bar-fill"
-                  style="width: {{ (player.game_contribution_pct.points_pct * 100)|round(1) }}%;"
+                  style="width: {{ (player.game_`tribution_pct.points_pct * 100)|round(1) }}%;"
                 ></div>
               </div>
             </div>
@@ -230,7 +237,6 @@
                     {{ college }}
                   </option>
                 {% endfor %}
-                <option value="Other" data-conf="Other">Other</option>
               </select>
 
               <div class="button-row">
@@ -358,7 +364,6 @@
                     {{ college }}
                   </option>
                 {% endfor %}
-                <option value="Other" data-conf="Other">Other</option>
               </select>
 
               <div class="button-row">
@@ -423,7 +428,6 @@
               <ul class="rules-list">
                 <li>Exact club — <span class="green">1.25&nbsp;pt</span></li>
                 <li>Correct country — 1&nbsp;pt</li>
-                <li>Guess “Other” — <span class="orange">0.75&nbsp;pt</span></li>
               </ul>
             </div>
 
@@ -461,7 +465,6 @@
                   <div class="ex-text">
                     <span class="player">Giannis&nbsp;Antetokounmpo</span>
                     <ul class="points">
-                      <li><span class="orange">“Other” — 0.75&nbsp;pt</span></li>
                       <li>Greece — 1&nbsp;pt</li>
                       <li><span class="green">Panathinaikos — 1.25&nbsp;pt</span></li>
                       <li><span class="red">Wrong guess — 0&nbsp;pt</span></li>
@@ -485,15 +488,6 @@
           <p>You've already played today's quiz. Come back tomorrow!</p>
         </div>
       </div>
-      {% if results and not current_user.is_authenticated %}
-      <div id="signup-modal" class="modal">
-        <div class="modal-content">
-          <p>Register to keep track of your scores and see your friends' ball knowledge.</p>
-          <a href="{{ url_for('auth.register') }}" class="play-again-modal">Register</a>
-          <button id="signup-close" class="play-again-modal" style="background:#475569;margin-left:1rem">Close</button>
-        </div>
-      </div>
-      {% endif %}
     {% endif %}
   </div>
   <!-- /content -->
@@ -520,7 +514,7 @@
   }
 
   if (hasResults && !userId) {
-    $('#signup-modal').fadeIn();
+    $('#signup-box').slideDown();
   }
 
   const seen = localStorage.getItem('seenInstructions');
@@ -531,9 +525,7 @@
     $('#instructions-modal').fadeOut();
     localStorage.setItem('seenInstructions', '1');
   });
-  $('#signup-close').on('click', function () {
-    $('#signup-modal').fadeOut();
-  });
+
   /* ----- Select2 init ---------------------------------------------------- */
   $('.guess-select').each(function () {
     const $sel = $(this);

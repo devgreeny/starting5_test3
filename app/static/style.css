@@ -451,6 +451,25 @@ body {
   margin-left: 0.5rem;
 }
 
+.signup-box {
+  position: absolute;
+  left: 0;
+  top: 16rem;
+  transform: translateX(calc(-100% - 1rem));
+  width: 40rem;
+  height:10rem;
+  background: var(--navy-800);
+  border: 2px solid var(--gold);
+  border-radius: 0.75rem;
+  padding: 0.88rem;
+  color: var(--gold);
+  font-size: 0.8rem;
+  text-align: center;
+  display: none;
+  margin-left: 20rem;
+  margin-right: 10rem;
+}
+
 .percentile-row {
   margin-top: 0.6rem;
   text-align: center;
