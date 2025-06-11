@@ -112,33 +112,34 @@
 
     <div class="quiz-wrapper{% if results %} with-score{% endif %}">
       {% if results %}
+      <div class="side-boxes">
         <div class="score-area">
           <div class="percentile-row">
             <span class="percent-text">You scored in the {{ percentile }}th percentile of players</span>
             <div class="bar">
               <div class="bar-fill percentile-fill" style="width: 0%;"></div>
             </div>
-          </div>
-          <p class="score-line">You scored {{ score }} out of {{ max_points }}</p>
-          {% if performance_text %}
-            <p class="performance-line">{{ performance_text }}</p>
-          {% endif %}
-          {% if streak is not none %}
-            <p class="streak-line">Days in a row: {{ streak }}</p>
-          {% endif %}
-          <div class="share-row">
+            </div>
+            <p class="score-line">You scored {{ score }} out of {{ max_points }}</p>
+            {% if performance_text %}
+              <p class="performance-line">{{ performance_text }}</p>
+            {% endif %}
+            {% if streak is not none %}
+              <p class="streak-line">Days in a row: {{ streak }}</p>
+            {% endif %}
             <div class="share-row">
-              <button id="share-btn" type="button">Share</button>
-              <span id="share-confirm" style="display:none">Copied to clipboard!</span>
+              <div class="share-row">
+                <button id="share-btn" type="button">Share</button>
+                <span id="share-confirm" style="display:none">Copied to clipboard!</span>
+              </div>
             </div>
           </div>
-        </div>
-      {% endif %}
-      
-      {% if results and not current_user.is_authenticated %}
-        <div id="signup-box" class="signup-box" style="display:none">
-          <p>Sign up to track your scores and compare your ball knowledge to your friends.</p>
-          <a id="signup-btn" href="{{ url_for('auth.register') }}" class="play-again-modal">Sign Up</a>
+          {% if not current_user.is_authenticated %}
+          <div id="signup-box" class="signup-box" style="display:none">
+            <p>Sign up to track your scores and compare your ball knowledge to your friends.</p>
+            <a id="signup-btn" href="{{ url_for('auth.register') }}" class="play-again-modal">Sign Up</a>
+          </div>
+        {% endif %}
         </div>
       {% endif %}
 
@@ -195,7 +196,7 @@
               <div class="bar">
                 <div
                   class="bar-fill"
-                  style="width: {{ (player.game_`tribution_pct.points_pct * 100)|round(1) }}%;"
+                  style="width: {{ (player.game_contribution_pct.points_pct * 100)|round(1) }}%;"
                 ></div>
               </div>
             </div>
@@ -652,6 +653,20 @@
       $('#share-confirm').fadeIn().delay(1500).fadeOut();
     });
   });
+
+  // Resize the sidebar so it ends 1rem before the quiz cards
+  function adjustSidebarWidth() {
+    const $sidebar = $('.side-boxes');
+    const $row = $('.row-top:first');
+    if (!$sidebar.length || !$row.length) return;
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+    const left = $row[0].getBoundingClientRect().left;
+    const width = Math.max(left - rem, 0);
+    $sidebar.css('width', width + 'px');
+  }
+
+  adjustSidebarWidth();
+  $(window).on('resize', adjustSidebarWidth);
 
 });
 
